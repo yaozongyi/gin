@@ -2,13 +2,16 @@ package main
 
 import (
 	"fmt"
+	"gin/session"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
 //用户信息
+// form 对应html的name
+// bingding 是バリデーションチェック
 type UserInfo struct {
-	Username string `form:"username"`
-	Password  string`form:"password"`
+	Username string `form:"username" binding:"required"`
+	Password  string`form:"password" binding:"required"`
 }
 func indexHandler(ctx *gin.Context){
 	ctx.HTML(http.StatusOK, "index.html", nil)
@@ -24,14 +27,28 @@ func loginHandeler(ctx *gin.Context) {
 		//sui
 		if err != nil {
 			fmt.Println("用户名和密码不能为空")
-			ctx.HTML(http.StatusOK, "index.html", nil)
+			ctx.HTML(http.StatusOK, "index.html", gin.H{"errMsg":"用户名和密码不能为空"})
 			return
 		}
 		username := ctx.PostForm("username")
 		password := ctx.PostForm("password")
-		fmt.Print(username)
-		fmt.Println(password)
-		ctx.HTML(http.StatusOK, "loginSuccess.html", gin.H{"title": "ログイン成功画面", "status": "ログイン成功"})
+		if username == "yao" && password == "yao" {
+			// 从上下文中获取sessionData
+			tmpSd, ok := ctx.Get(session.SessionContextName)
+			if !ok {
+				panic("session middleware")
+			}
+			// 这句话没有搞明白
+			// @TODO
+			sd := tmpSd.(session.SessionData)
+			// 
+			sd.SetKey("isLogin", true)
+			sd.Save()
+			ctx.Redirect(http.StatusMovedPermanently, ctx.DefaultQuery("next", "index"))
+			ctx.HTML(http.StatusOK, "loginSuccess.html", gin.H{"title": "ログイン成功画面", "status": "ログイン成功"})
+		} else {
+			ctx.HTML(http.StatusOK, "index.html", gin.H{"errMsg":"用户名或者密码不正确"})
+		}
 	} else {
 		ctx.HTML(http.StatusOK, "index.html", nil)
 	}
@@ -100,6 +117,9 @@ func authCookie() gin.HandlerFunc {
 		context.Abort()
 		return
 	}
+}
+func vipHandler(ctx *gin.Context) {
+	ctx.HTML(http.StatusOK, "vip.html", gin.H{"title": "VIP画面", "status": "欢迎VIP用户"})
 }
 
 func noRouteHandler(ctx *gin.Context) {

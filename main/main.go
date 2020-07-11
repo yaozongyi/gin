@@ -1,6 +1,7 @@
 package main
 
 import (
+	"gin/session"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
@@ -14,8 +15,9 @@ func main() {
 	router.LoadHTMLGlob(filepath.Join(os.Getenv("GOPATH"),
 		"src/gin/templates/*"))
 	//router.LoadHTMLFiles("templates/template1.html", "templates/template2.html")
-
-
+	// session作为全局的中间件
+	session.InitMgr("memory", "")
+	router.Use(session.SessionMiddleware(session.MgrObj))
 	router.GET("/index", indexHandler)
 
 	router.Any("/login", loginHandeler)
@@ -30,6 +32,8 @@ func main() {
 	router.GET("/loginCookie02", loginCookie02Handler)
 	// cookie 验证
 	router.GET("/checkCookie", authCookie(), checkCookieHandler)
+	// vip
+	router.GET("/vip", session.AuthMiddleware, vipHandler)
 
 	/**
 	* Session验证
